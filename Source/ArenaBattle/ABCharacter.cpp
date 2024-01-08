@@ -5,7 +5,9 @@
 #include "ABAnimInstance.h"
 #include "ABWeapon.h"
 #include "ABCharacterStatComponent.h"
+#include "ABCharacterWidget.h"
 #include "DrawDebugHelpers.h"
+#include "Components/WidgetComponent.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -16,13 +18,17 @@ AABCharacter::AABCharacter()
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SPRINGARM"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("CAMERA"));
 	CharacterStat = CreateDefaultSubobject<UABCharacterStatComponent>(TEXT("CHARACTERSTAT"));
+	HPBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HPBARWIDGET"));
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
+	HPBarWidget->SetupAttachment(GetMesh());
 
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f,0.0f,-88.0f),FRotator(0.0f,-90.f,0.0f));
 	SpringArm->TargetArmLength=400.0f;
 	SpringArm->SetRelativeRotation(FRotator(-15.0f,0.0f,0.0f));
+	HPBarWidget->SetRelativeLocation(FVector(0.0f,0.0f,180.0f));
+	HPBarWidget->SetWidgetSpace(EWidgetSpace::Screen);
 
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh>SK_CARDBOARD(TEXT("/Game/InfinityBladeWarriors/Character/CompleteCharacters/SK_CharM_Cardboard.SK_CharM_Cardboard"));
 
@@ -38,9 +44,20 @@ AABCharacter::AABCharacter()
 	{
 		GetMesh()->SetAnimInstanceClass(WARRIOR_ANIM.Class);
 	}
+
+	static ConstructorHelpers::FClassFinder<UUserWidget>UI_HUD(TEXT("/Game/Book/UI/UI_HPBar.UI_HPBar_C"));
+	if(UI_HUD.Succeeded())
+	{
+		HPBarWidget->SetWidgetClass(UI_HUD.Class);
+		HPBarWidget->SetDrawSize(FVector2D(150.0f,50.0f));
+	}
+
+
 	ArmLengthSpeed = 3.0f;
 	ArmRotationSpeed = 10.0f;
 	GetCharacterMovement()->JumpZVelocity = 400.0f;
+
+	
 
 	SetControlMode(EControlMode::TPS);
 	IsAttacking = false;
@@ -59,7 +76,12 @@ AABCharacter::AABCharacter()
 void AABCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	auto CharacterWidget = Cast<UABCharacterWidget>(HPBarWidget->GetUserWidgetObject());
+	if(nullptr!=CharacterWidget)
+	{
+		CharacterWidget->BindCharacterStat(CharacterStat);
+	}
 }
 
 void AABCharacter::SetControlMode(EControlMode NewControlMode)
@@ -194,6 +216,7 @@ void AABCharacter::LeftRight(float NewAxisValue)
 		DirectionToMove.Y = NewAxisValue;
 	}
 }
+
 float AABCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, 
 AController* EventInstigator, AActor* DamageCauser)
 {

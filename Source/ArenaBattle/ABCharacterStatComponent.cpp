@@ -21,18 +21,35 @@ UABCharacterStatComponent::UABCharacterStatComponent()
 void UABCharacterStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
+	SetNewLevel(Level);
 	// ...
 	
 }
 
-
-// Called every frame
-void UABCharacterStatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UABCharacterStatComponent::SetNewLevel(int32 NewLevel)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	auto ABGameInstance = Cast<UABGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
 
-	// ...
+	if (ABGameInstance)
+	{
+		CurrentStatData = ABGameInstance->GetABCharacterData(NewLevel);
+
+		if (CurrentStatData)
+		{
+			Level = NewLevel;
+			SetHP(CurrentStatData->MaxHP);
+		}
+		else
+		{
+			// 처리할 수 없는 레벨이거나 데이터가 없는 경우에 대한 예외 처리 추가
+			UE_LOG(LogTemp, Error, TEXT("Cannot find data for level %d"), NewLevel);
+		}
+	}
+	else
+	{
+		// ABGameInstance가 null인 경우에 대한 예외 처리 추가
+		UE_LOG(LogTemp, Error, TEXT("ABGameInstance is null"));
+	}
 }
 
 void UABCharacterStatComponent::InitializeComponent()
@@ -41,27 +58,39 @@ void UABCharacterStatComponent::InitializeComponent()
 	SetNewLevel(Level);
 }
 
-void UABCharacterStatComponent::SetNewLevel(int32 NewLevel)
+void UABCharacterStatComponent::SetHP(float NewHP)
 {
-	auto ABGameInstance = Cast<UABGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
-
-	CurrentStatData = ABGameInstance->GetABCharacterData(NewLevel);
-	if (nullptr != CurrentStatData)
+	CurrentHP = NewHP;
+	OnHPChanged.Broadcast();
+	if (CurrentHP < KINDA_SMALL_NUMBER)
 	{
-		Level = NewLevel;
-		CurrentHP = CurrentStatData->MaxHP;
+		CurrentHP = 0.0f;
+		OnHPIsZero.Broadcast();
 	}
 }
 
+
+
 void UABCharacterStatComponent::SetDamage(float NewDamage)
 {
-	CurrentHP = FMath::Clamp<float>(CurrentHP - NewDamage, 0.0f, CurrentStatData->MaxHP);
-	if (CurrentHP <= 0.0f)
-		OnHPIsZero.Broadcast();
+	SetHP(FMath::Clamp<float>(CurrentHP - NewDamage, 0.0f, CurrentStatData->MaxHP));
 }
 
 float UABCharacterStatComponent::GetAttack()
 {
 	return CurrentStatData->Attack;
+}
+
+float UABCharacterStatComponent::GetHPRatio()
+{
+	return (CurrentStatData->MaxHP < KINDA_SMALL_NUMBER) ? 0.0f : (CurrentHP / CurrentStatData->MaxHP);
+}
+
+// Called every frame
+void UABCharacterStatComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	// ...
 }
 

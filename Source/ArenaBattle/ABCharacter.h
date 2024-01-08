@@ -49,6 +49,9 @@ public:
 	UPROPERTY(VisibleAnywhere,Category="Camera")
 	UCameraComponent* Camera;
 
+	UPROPERTY(VisibleAnywhere,Category="UI")
+	class UWidgetComponent* HPBarWidget;
+
 	void AttackCheck();
 	
 	UPROPERTY(EditInstanceOnly,BlueprintReadOnly,Category="Attack",Meta=(AllowPrivateAccess=true))
@@ -96,8 +99,6 @@ private:
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = Attack, Meta = (AllowPrivateAccess = true))
 	int32 MaxCombo;
 
-	UPROPERTY(VisibleAnywhere,Category="UI")
-	class UWidgetComponent* HPBarWidget;
 
 	UPROPERTY()
 	class UABAnimInstance* ABAnim;

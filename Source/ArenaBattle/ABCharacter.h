@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "ABCharacter.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnAttackEndDelegate);
+
 UCLASS()
 class ARENABATTLE_API AABCharacter : public ACharacter
 {
@@ -21,7 +23,8 @@ protected:
 
 	enum class EControlMode{
 		TPS,
-		QUARTERVIEW
+		QUARTERVIEW,
+		NPC
 	};
 
 	void SetControlMode(EControlMode NewControlMode);
@@ -63,6 +66,11 @@ public:
 	bool CanSetWeapon();
 	void SetWeapon(class AABWeapon* NewWeapon);
 
+	void Attack();
+	FOnAttackEndDelegate OnAttackEnd;
+
+	void PossessedBy(AController* NewController);
+
 	UPROPERTY(VisibleAnywhere,Category="Weapon")
 	class AABWeapon* CurrentWeapon;
 
@@ -76,7 +84,6 @@ private:
 	void LookUp(float NewAxisValue);
 
 	void ViewChange();
-	void Attack();
 
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);

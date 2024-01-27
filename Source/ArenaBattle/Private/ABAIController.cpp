@@ -27,15 +27,26 @@ AABAIController::AABAIController()
 void AABAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
+}
 
-    UBlackboardComponent* BlackboardComponent = Blackboard;
+void AABAIController::RunAI()
+{
+	UBlackboardComponent* BlackboardComponent = Blackboard;
 
 	if (UseBlackboard(BBAsset, BlackboardComponent))
 	{
-        Blackboard->SetValueAsVector(HomePosKey, InPawn->GetActorLocation());
+        Blackboard->SetValueAsVector(HomePosKey, GetPawn()->GetActorLocation());
 		if(!RunBehaviorTree(BTAsset))
         {
             UE_LOG(LogTemp, Warning, TEXT("Your message"));
         }
 	}
+}
+
+
+void AABAIController::StopAI()
+{
+	auto BehaviorTreeComponent = Cast<UBehaviorTreeComponent>(BrainComponent);
+	if (nullptr != BehaviorTreeComponent)
+		BehaviorTreeComponent->StopTree();
 }

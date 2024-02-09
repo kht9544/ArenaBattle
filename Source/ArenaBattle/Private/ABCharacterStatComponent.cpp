@@ -94,3 +94,7 @@ void UABCharacterStatComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	// ...
 }
 
+int32 UABCharacterStatComponent::GetDropExp()
+{
+	return CurrentStatData->DropExp;
+}

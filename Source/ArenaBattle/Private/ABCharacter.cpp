@@ -14,6 +14,7 @@
 #include "Engine/AssetManager.h"
 #include "ABPlayerController.h"
 #include "ABSection.h"
+#include "ABPlayerState.h"
 
 // Sets default values
 AABCharacter::AABCharacter()
@@ -269,6 +270,14 @@ AController* EventInstigator, AActor* DamageCauser)
 	float FinalDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 	
 	CharacterStat->SetDamage(FinalDamage);
+	if (CurrentState == ECharacterState::DEAD)
+	{
+		if (EventInstigator->IsPlayerController())
+		{
+			auto TempABPlayerController = Cast<AABPlayerController>(EventInstigator);
+			TempABPlayerController->NPCKill(this);
+		}
+	}
 
 	return FinalDamage;
 }
@@ -431,8 +440,13 @@ void AABCharacter::SetCharacterState(ECharacterState NewState)
 	{
 	case ECharacterState::LOADING:
 	{
-		if(bIsPlayer)
+		if (bIsPlayer)
+		{
 			DisableInput(ABPlayerController);
+
+			auto ABPlayerState = Cast<AABPlayerState>(GetPlayerState());
+			CharacterStat->SetNewLevel(ABPlayerState->GetCharacterLevel());
+		}
 		SetActorHiddenInGame(true);
 		HPBarWidget->SetHiddenInGame(true);
 		SetCanBeDamaged(false);
@@ -493,4 +507,10 @@ case ECharacterState::DEAD:
 ECharacterState AABCharacter::GetCharacterState() const
 {
 	return CurrentState;
+}
+
+
+int32 AABCharacter::GetExp() const
+{
+	return CharacterStat->GetDropExp();
 }

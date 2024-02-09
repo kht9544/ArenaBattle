@@ -4,6 +4,7 @@
 #include "ABSection.h"
 #include "ABCharacter.h"
 #include "ABItem.h"
+#include "ABPlayerController.h"
 
 // Sets default values
 AABSection::AABSection()
@@ -103,7 +104,12 @@ void AABSection::SetState(ESectionState NewState)
 		GetWorld()->GetTimerManager().SetTimer(SpawnNPCTimerHandle, 
 			FTimerDelegate::CreateLambda([this]()->void
 				{
-					GetWorld()->SpawnActor<AABCharacter>(GetActorLocation() + FVector::UpVector * 88.0f, FRotator::ZeroRotator);
+					auto KeyNPC = GetWorld()->SpawnActor<AABCharacter>(GetActorLocation() + FVector::UpVector * 88.0f,FRotator::ZeroRotator);
+
+					if(nullptr != KeyNPC)
+					{
+						KeyNPC->OnDestroyed.AddDynamic(this, &AABSection::OnKeyNPCDestroyed);
+					}
 				}), EnemySpawnTime, false);
 
 		GetWorld()->GetTimerManager().SetTimer(SpawnItemBoxTimerHandle,
@@ -173,4 +179,14 @@ void AABSection::OnGateTriggerBeginOverlap(UPrimitiveComponent* OverlappedCompon
 	if (!bResult)
 		auto NewSection = GetWorld()->SpawnActor<AABSection>(NewLocation, FRotator::ZeroRotator);
         
+}
+
+void AABSection::OnKeyNPCDestroyed(AActor* DestroyedActor)
+{
+	auto ABCharacter = Cast<AABCharacter>(DestroyedActor);
+	auto ABPlayerController = Cast<AABPlayerController>(ABCharacter->LastHitBy);
+	auto ABGameMode = Cast<AABGameMode>(GetWorld()->GetAuthGameMode());
+	ABGameMode->AddScore(ABPlayerController);
+
+	SetState(ESectionState::COMPLETE);
 }

@@ -48,6 +48,8 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+	int32 GetExp() const;
+
 	UPROPERTY(VisibleAnywhere,Category="Camera")
 	USpringArmComponent* SpringArm;
 
@@ -137,5 +139,6 @@ private:
 	
 	FTimerHandle DeadTimerHandle = {};
 };
+
 
 
